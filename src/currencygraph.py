@@ -24,6 +24,11 @@ class CurrencyNode:
 
     name: str
 
+
+
+
+
+
     def __eq__(self,
                other: 'CurrencyNode') -> bool:
         """
@@ -55,7 +60,7 @@ class CurrencyEdge:
 
     ## Attributes
         `source`: The source currency node.
-        `target`: The target currency node.
+        `target`: The target currency node.ddddddddddddddddddddddddddddddddddddddd
         `weight`: The weight of the edge.
 
     ## Example
