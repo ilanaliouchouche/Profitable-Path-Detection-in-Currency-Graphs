@@ -56,7 +56,21 @@ git checkout -b <your-branch-name>
 
 You can make your changes in the appropriate files. The structures you will work with are mainly located in the module src/currencygraph.py. Please note that this module should generally not be modified unless necessary for the task at hand.
 
-### 3. Commit and push your changes
+### 3. Running Tests
+
+Before submitting your changes, please ensure that all your code is properly tested with unit tests. All test files should be placed in the `tests/` folder and prefixed with `test_` (e.g., `test_currencygraph.py`).
+
+To run the tests, use one of the following commands in the terminal:
+
+```bash
+# To run a specific test file
+python -m unittest tests/test_yourfile.py
+
+# To run all tests in the tests/ folder
+python -m unittest discover tests
+```
+
+### 4. Commit and push your changes
 
 Once your changes are complete, commit and push them to your branch:
 ```bash
@@ -65,10 +79,11 @@ git commit -m "Description of your changes"
 git push origin <your-branch-name>
 ```
 
-### 4. Submit a Pull Request
+### 5. Submit a Pull Request
 
 After submitting your PR, please wait for a review. Feedback might be provided, and adjustments could be required before the PR is approved and merged.
 
 ## Notes
 
-Each push triggers a workflow that checks the code’s conformity with Flake8, so please ensure your code is clean, and it’s recommended to install the Flake8 extension in VSCode for real-time linting.
+- Each push triggers a workflow that checks the code’s conformity with Flake8, so please ensure your code is clean, and it’s recommended to install the Flake8 extension in VSCode for real-time linting.
+- Each push or pull request will automatically trigger a workflow that runs all unit tests located in the `tests/` folder. Please make sure your tests pass before creating a pull request.
