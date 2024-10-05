@@ -7,8 +7,8 @@ setup(
     include_package_data=True,
     author='Ilan Aliouchouche',
     install_requires=[
-        'numpy',
-        'pandas',
+        'numpy==1.26.4',
+        'pandas==2.2.2',
     ],
     python_requires='>=3.10',
 )
