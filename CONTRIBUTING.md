@@ -47,14 +47,14 @@ This will install the required dependencies (numpy and pandas for the moment) an
 
 ### 1. Create a new branch
 
-Before starting any work, create a new branch. We have enforced rules on the main branch, so no direct commits are allowed. To create a branch, use:
+Before starting any work, create a new branch. I have enforced rules on the `main` branch, so no direct commits are allowed. To create a branch, use:
 ```bash
 git checkout -b <your-branch-name>
 ```
 
 ### 2. Implement your changes
 
-You can make your changes in the appropriate files. The structures you will work with are mainly located in the module src/currencygraph.py. Please note that this module should generally not be modified unless necessary for the task at hand.
+You can make your changes in the appropriate files. The structures you will work with are mainly located in the module `src/currencygraph.py`. Please note that this module should generally not be modified unless necessary for the task at hand.
 
 ### 3. Running Tests
 
