@@ -26,6 +26,24 @@ class CurrencyNode:
 
     def __eq__(self,
                other: 'CurrencyNode') -> bool:
+        """
+        Checks if two CurrencyNode objects are equal.
+
+        ## Parameters
+            `other`: The other CurrencyNode object to compare.
+
+        ## Returns
+            A boolean indicating whether the two CurrencyNodes are equal.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode
+
+        node_usd = CurrencyNode('USD')
+        node_eu = CurrencyNode('EUR')
+        print(node_usd == node_eu)  # False
+        ```
+        """
 
         return self.name == other.name
 
@@ -56,6 +74,26 @@ class CurrencyEdge:
 
     def __eq__(self,
                other: 'CurrencyEdge') -> bool:
+        """
+        Checks if two CurrencyEdge objects are equal.
+
+        ## Parameters
+            `other`: The other CurrencyEdge object to compare.
+
+        ## Returns
+            A boolean indicating whether the two CurrencyEdges are equal.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyEdge
+
+        source = CurrencyNode('USD')
+        target = CurrencyNode('EUR')
+        edge = CurrencyEdge(source, target, 0.8)
+        edge2 = CurrencyEdge(source, target, 0.8)
+        print(edge == edge2)  # True
+        ```
+        """
 
         return self.source == other.source and self.target == other.target
 
@@ -100,6 +138,11 @@ class CurrencyGraph:
         # We check if the nodes in the _nodes are unique
         if len(set([node.name for node in self._nodes])) != len(self._nodes):
             raise ValueError("Nodes must be unique.")
+
+        # We check if the edges in the _edges are unique
+        if len(set([(edge.source.name, edge.target.name)
+                    for edge in self._edges])) != len(self._edges):
+            raise ValueError("Edges must be unique.")
 
     def get_adjacency_matrix(self,
                              as_dataframe: bool = False
@@ -204,7 +247,6 @@ class CurrencyGraph:
 
         graph = CurrencyGraph([CurrencyNode('USD'),CurrencyNode('EUR')],
         [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8)])
-
         graph.remove_edge(CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR')
         , 0.8))
         ```
@@ -229,7 +271,6 @@ class CurrencyGraph:
 
         graph = CurrencyGraph([CurrencyNode('USD'),CurrencyNode('EUR')],
         [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8)])
-
         graph.remove_node(CurrencyNode('USD'))
         ```
         """
@@ -243,28 +284,118 @@ class CurrencyGraph:
 
     @property
     def nodes(self) -> List[CurrencyNode]:
+        """
+        Returns the nodes of the graph.
 
-        return list(self._nodes)
+        ## Returns
+            A list of CurrencyNode objects representing the nodes of the graph.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyGraph
+
+        graph = CurrencyGraph([CurrencyNode('USD'), CurrencyNode('EUR')], [])
+        nodes = graph.nodes
+        print(nodes)
+        ```
+        """
+
+        return self._nodes
 
     @property
     def edges(self) -> List[CurrencyEdge]:
+        """
+        Returns the edges of the graph.
 
-        return list(self._edges)
+        ## Returns
+            A list of CurrencyEdge objects representing the edges of the graph.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyEdge, CurrencyGraph
+
+        graph = CurrencyGraph([CurrencyNode('USD'), CurrencyNode('EUR')],
+        [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8)])
+        edges = graph.edges
+        print(edges)
+        ```
+        """
+
+        return self._edges
 
     @nodes.setter
     def nodes(self, nodes: List[CurrencyNode]) -> None:
+        """
+        Sets the nodes of the graph.
+
+        ## Parameters
+            `nodes`: A list of CurrencyNode objects representing the nodes.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyGraph
+
+        graph = CurrencyGraph([], [])
+        graph.nodes = [CurrencyNode('USD'), CurrencyNode('EUR')]
+        ```
+        """
 
         self._nodes = nodes
 
     @edges.setter
     def edges(self, edges: List[CurrencyEdge]) -> None:
+        """
+        Sets the edges of the graph.
+
+        ## Parameters
+            `edges`: A list of CurrencyEdge objects representing the edges.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyEdge, CurrencyGraph
+
+        graph = CurrencyGraph([], [])
+        graph.edges = [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR')
+        ,0.8)]
+        ```
+        """
 
         self._edges = edges
 
     def __repr__(self) -> str:
+        """
+        Returns a string representation of the CurrencyGraph object.
+
+        ## Returns
+            A string representation of the CurrencyGraph object.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyEdge, CurrencyGraph
+
+        graph = CurrencyGraph([CurrencyNode('USD'), CurrencyNode('EUR')],
+        [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8)])
+        print(graph)
+        ```
+        """
 
         return f"CurrencyGraph(nodes={self._nodes}, edges={self._edges})"
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the CurrencyGraph object.
+
+        ## Returns
+            A string representation of the CurrencyGraph object.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyEdge, CurrencyGraph
+
+        graph = CurrencyGraph([CurrencyNode('USD'), CurrencyNode('EUR')],
+        [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8)])
+        print(graph)
+        ```
+        """
 
         return self.__repr__()
