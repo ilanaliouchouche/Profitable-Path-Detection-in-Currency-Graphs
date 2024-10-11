@@ -9,6 +9,7 @@ setup(
     install_requires=[
         'numpy==1.26.4',
         'pandas==2.2.2',
+        'networkx==3.1',
     ],
     python_requires='>=3.10',
 )

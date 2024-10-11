@@ -49,3 +49,14 @@ def brute_force(G: CurrencyGraph,
                 stack.append((next_node, path + [next_node], new_profit))
 
     return max(all_cycles_with_profits, key=lambda x: x[1])
+
+
+def crafted_brute_force(G: CurrencyGraph,
+                        start_currency: CurrencyNode,
+                        n_passages: int
+                        ) -> Tuple[List[CurrencyNode], float]:
+    """
+    A crafted brute force algorithm to find the most profitable cycle that
+    starts and ends at the given start_currency in a currency graph.
+    """
+    pass
