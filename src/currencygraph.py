@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt
 from typing import Sequence, Union, List
 from dataclasses import dataclass
 
@@ -11,7 +13,6 @@ class CurrencyNode:
 
     ## Attributes
         `name`: The name of the currency
-        `date`: (Optional) The date of the currency rate.
 
     ## Example
     ```py
@@ -183,6 +184,60 @@ class CurrencyGraph:
                                 columns=[node.name for node in self._nodes])
 
         return adj_matrix
+
+    def get_edges_from_source(self,
+                              node: CurrencyNode) -> List[CurrencyEdge]:
+        """
+        Returns the edges from a source node.
+
+        ## Parameters
+            `node`: The source node to get the edges from.
+
+        ## Returns
+            A list of CurrencyEdge objects representing the edges from the
+            source node.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyEdge, CurrencyGraph
+
+        nodes = [CurrencyNode('USD'), CurrencyNode('EUR')]
+        edges = [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8)]
+        graph = CurrencyGraph(nodes, edges)
+
+        edges = graph.get_edges_from_source(CurrencyNode('USD'))
+        print(edges)
+        ```
+        """
+
+        return [edge for edge in self._edges if edge.source == node]
+
+    def show(self) -> None:
+        """
+        Displays the currency graph using NetworkX and Matplotlib.
+
+        ## Example
+        ```py
+        graph = CurrencyGraph(nodes, edges)
+        graph.show()
+        ```
+        """
+        G = nx.DiGraph()
+
+        for node in self._nodes:
+            G.add_node(node.name)
+        for edge in self._edges:
+            G.add_edge(edge.source.name, edge.target.name, weight=edge.weight)
+
+        pos = nx.spring_layout(G)
+        nx.draw(G, pos, with_labels=True, node_size=3000,
+                node_color='lightblue', font_size=10,
+                font_weight='bold', arrows=True)
+        edge_labels = {(edge.source.name, edge.target.name): f'{edge.weight}'
+                       for edge in self._edges}
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+
+        plt.show()
 
     def add_node(self,
                  node: CurrencyNode) -> None:
