@@ -22,7 +22,11 @@ def brute_force(G: CurrencyGraph,
     ```py
     nodes = [CurrencyNode('E'), CurrencyNode('D'),
              CurrencyNode('L'), CurrencyNode('F')]
-    edges = [CurrencyEdge(self.nodes[0], self.nodes[1], 1.19),
+    edges = [CurrencyEdge(self.nodes[0], self.nodes[0], 1.0),
+             CurrencyEdge(self.nodes[1], self.nodes[1], 1.0),
+             CurrencyEdge(self.nodes[2], self.nodes[2], 1.0),
+             CurrencyEdge(self.nodes[3], self.nodes[3], 1.0),
+             CurrencyEdge(self.nodes[0], self.nodes[1], 1.19),
              CurrencyEdge(self.nodes[1], self.nodes[0], 0.84),
              CurrencyEdge(self.nodes[0], self.nodes[2], 1.33),
              CurrencyEdge(self.nodes[2], self.nodes[0], 0.75),
@@ -80,7 +84,11 @@ def simplified_dijkstra(G: CurrencyGraph,
     ```py
     nodes = [CurrencyNode('E'), CurrencyNode('D'),
              CurrencyNode('L'), CurrencyNode('F')]
-    edges = [CurrencyEdge(self.nodes[0], self.nodes[1], 1.19),
+    edges = [CurrencyEdge(self.nodes[0], self.nodes[0], 1.0),
+             CurrencyEdge(self.nodes[1], self.nodes[1], 1.0),
+             CurrencyEdge(self.nodes[2], self.nodes[2], 1.0),
+             CurrencyEdge(self.nodes[3], self.nodes[3], 1.0),
+             CurrencyEdge(self.nodes[0], self.nodes[1], 1.19),
              CurrencyEdge(self.nodes[1], self.nodes[0], 0.84),
              CurrencyEdge(self.nodes[0], self.nodes[2], 1.33),
              CurrencyEdge(self.nodes[2], self.nodes[0], 0.75),
@@ -99,6 +107,7 @@ def simplified_dijkstra(G: CurrencyGraph,
 
     lambda_values = {node: 0.0 for node in G.nodes}
     lambda_values[start_currency] = 1.0
+
     best_paths = {node: [start_currency] for node in G.nodes}
 
     for edge in G.get_edges_from_source(start_currency):
@@ -107,92 +116,36 @@ def simplified_dijkstra(G: CurrencyGraph,
 
     for k in range(1, n_passages):
         print(f"Passage {k}")
+
+        temp_lambda_values = lambda_values.copy()
+        temp_best_paths = best_paths.copy()
+
         for node in G.nodes:
             print(f"\tNode {node}")
             max_value = lambda_values[node]
             best_path = best_paths[node]
-            for target_node in G.nodes:
-                new_value = (lambda_values[target_node] *
-                             G.get_edge_weight(target_node, node))
-                print(f"\t\t{target_node} -> {node}: {new_value}")
-                if new_value > max_value:
-                    max_value = new_value
-                    best_path = best_paths[node] + [node]
-            print(f"\tMax value: {max_value} of path {best_path}")
-            lambda_values[node] = max_value
-            best_paths[node] = best_path
 
-    final_cycle = best_paths[start_currency] + [start_currency]
+            for target_node in G.nodes:
+                edge_weight = G.get_edge_weight(target_node, node)
+                if edge_weight > 0:
+                    new_value = lambda_values[target_node] * edge_weight
+                    print(f"\t\t{target_node} -> {node}: "
+                          f"{lambda_values[target_node]}*"
+                          f"{edge_weight}={new_value}")
+                    if new_value > max_value:
+                        max_value = new_value
+                        best_path = best_paths[target_node] + [node]
+
+            temp_lambda_values[node] = max_value
+            temp_best_paths[node] = best_path
+
+        lambda_values = temp_lambda_values
+        best_paths = temp_best_paths
+
+    final_cycle = (best_paths[start_currency]
+                   if best_paths[start_currency][-1] == start_currency
+                   else best_paths[start_currency] + [start_currency])
+
     max_profit = lambda_values[start_currency]
 
     return final_cycle, max_profit
-
-
-def simplified_dijkstrv(G: CurrencyGraph,
-                        start_currency: CurrencyNode,
-                        n_passages: int
-                        ) -> Tuple[List[CurrencyNode], float]:
-    """
-    A crafted dijkstra algorithm to find the most profitable cycle that
-    starts and ends at the given start_currency in a currency graph, with a
-    limit on the number of exchanges (n_passages).
-
-    ## Parameters
-        G: The currency graph to analyze.
-        start_currency: The currency node to start and end the cycle from.
-        n_passages: The maximum number of exchanges (passages) allowed.
-
-    ## Returns
-        The most profitable cycle (list of CurrencyNodes)
-        and the corresponding profit.
-    """
-
-    # Step 1 : Define a map dictionary to map each node to an index
-    node_to_index = {node: i for i, node in enumerate(G.nodes)}
-
-    # Step 2 :Initialize lambda iterations
-    lambda_iterations = [[0.0] * n_passages for _ in range(len(G.nodes))]
-    lambda_values = {node: 0.0 for node in G.nodes}
-
-    # Step 3 : Initialize the lambda values for the start node
-    lambda_values[start_currency] = 1.0
-    start_index = node_to_index[start_currency]
-    lambda_iterations[start_index][0] = 1.0
-
-    # Step 4 : Initialize the lambda values for the rest of the nodes
-    for edge in G.get_edges_from_source(start_currency):
-        lambda_values[edge.target] = edge.weight
-        target_index = node_to_index[edge.target]
-        lambda_iterations[target_index][0] = edge.weight
-
-    # Step 5 : Iterate over the number of passages
-    for k in range(1, n_passages):
-        # Step 6 : Iterate over the nodes
-        print(f"Passage {k}")
-        for node in G.nodes:
-            print(f"\tNode {node}")
-            # Get the index of the node
-            j = node_to_index[node]
-            # update the lambda j,k value
-            lambda_nk = lambda_iterations[j][k]
-            for target_node in G.nodes:
-                node_index = node_to_index[target_node]
-                last_lambda = lambda_iterations[node_index][k - 1]
-                tij = G.get_edge_weight(node, target_node)
-                lambda_nk = max(lambda_nk, last_lambda * tij)
-                print(f"\t\t{node} -> {edge.target}: {lambda_nk}")
-            lambda_iterations[j][k] = lambda_nk
-            lambda_values[node] = lambda_nk
-
-    # Step 7 : Find the most profitable cycle from the source node
-    max_profit_cycle = []
-    max_profit = lambda_values[start_currency]
-    for node in G.nodes:
-        if node != start_currency:
-            node_index = node_to_index[node]
-            last_lambda = lambda_iterations[node_index][n_passages - 1]
-            if last_lambda * G.get_edge_weight(node, start_currency) > max_profit:
-                max_profit = last_lambda * G.get_edge_weight(node, start_currency)
-                max_profit_cycle = [node, start_currency]
-
-    return max_profit_cycle, max_profit
