@@ -20,15 +20,26 @@ def brute_force(G: CurrencyGraph,
 
     ## Example
     ```py
-    nodes = [CurrencyNode('E'), CurrencyNode('D'), CurrencyNode('L')]
-    edges = [CurrencyEdge(nodes[0], nodes[1], 2),
-             CurrencyEdge(nodes[1], nodes[0], 10),
-             CurrencyEdge(nodes[1], nodes[2], 3.5),
-             CurrencyEdge(nodes[2], nodes[1], 1/4),
-             CurrencyEdge(nodes[2], nodes[0], 12),
-             CurrencyEdge(nodes[0], nodes[2], 13)]
+    nodes = [CurrencyNode('E'), CurrencyNode('D'),
+             CurrencyNode('L'), CurrencyNode('F')]
+    edges = [CurrencyEdge(self.nodes[0], self.nodes[0], 1.0),
+             CurrencyEdge(self.nodes[1], self.nodes[1], 1.0),
+             CurrencyEdge(self.nodes[2], self.nodes[2], 1.0),
+             CurrencyEdge(self.nodes[3], self.nodes[3], 1.0),
+             CurrencyEdge(self.nodes[0], self.nodes[1], 1.19),
+             CurrencyEdge(self.nodes[1], self.nodes[0], 0.84),
+             CurrencyEdge(self.nodes[0], self.nodes[2], 1.33),
+             CurrencyEdge(self.nodes[2], self.nodes[0], 0.75),
+             CurrencyEdge(self.nodes[0], self.nodes[3], 1.62),
+             CurrencyEdge(self.nodes[3], self.nodes[0], 0.62),
+             CurrencyEdge(self.nodes[1], self.nodes[2], 1.12),
+             CurrencyEdge(self.nodes[2], self.nodes[1], 0.89),
+             CurrencyEdge(self.nodes[1], self.nodes[3], 1.37),
+             CurrencyEdge(self.nodes[3], self.nodes[1], 0.73),
+             CurrencyEdge(self.nodes[2], self.nodes[3], 1.22),
+             CurrencyEdge(self.nodes[3], self.nodes[2], 0.82)]
     G = CurrencyGraph(nodes, edges)
-    print(brute_force(G, nodes[0]))
+    output = brute_force(G, nodes[0])
     ```
     """
 
@@ -51,12 +62,90 @@ def brute_force(G: CurrencyGraph,
     return max(all_cycles_with_profits, key=lambda x: x[1])
 
 
-def crafted_brute_force(G: CurrencyGraph,
+def simplified_dijkstra(G: CurrencyGraph,
                         start_currency: CurrencyNode,
                         n_passages: int
                         ) -> Tuple[List[CurrencyNode], float]:
     """
-    A crafted brute force algorithm to find the most profitable cycle that
-    starts and ends at the given start_currency in a currency graph.
+    A crafted dijkstra algorithm to find the most profitable cycle that
+    starts and ends at the given start_currency in a currency graph, with a
+    limit on the number of exchanges (n_passages).
+
+    ## Parameters
+        `G`: The currency graph to analyze.
+        `start_currency`: The currency node to start and end the cycle from.
+        `n_passages`: The maximum number of exchanges (passages) allowed.
+
+    ## Returns
+        The most profitable cycle (list of CurrencyNodes)
+        and the corresponding profit.
+
+    ## Example
+    ```py
+    nodes = [CurrencyNode('E'), CurrencyNode('D'),
+             CurrencyNode('L'), CurrencyNode('F')]
+    edges = [CurrencyEdge(self.nodes[0], self.nodes[0], 1.0),
+             CurrencyEdge(self.nodes[1], self.nodes[1], 1.0),
+             CurrencyEdge(self.nodes[2], self.nodes[2], 1.0),
+             CurrencyEdge(self.nodes[3], self.nodes[3], 1.0),
+             CurrencyEdge(self.nodes[0], self.nodes[1], 1.19),
+             CurrencyEdge(self.nodes[1], self.nodes[0], 0.84),
+             CurrencyEdge(self.nodes[0], self.nodes[2], 1.33),
+             CurrencyEdge(self.nodes[2], self.nodes[0], 0.75),
+             CurrencyEdge(self.nodes[0], self.nodes[3], 1.62),
+             CurrencyEdge(self.nodes[3], self.nodes[0], 0.62),
+             CurrencyEdge(self.nodes[1], self.nodes[2], 1.12),
+             CurrencyEdge(self.nodes[2], self.nodes[1], 0.89),
+             CurrencyEdge(self.nodes[1], self.nodes[3], 1.37),
+             CurrencyEdge(self.nodes[3], self.nodes[1], 0.73),
+             CurrencyEdge(self.nodes[2], self.nodes[3], 1.22),
+             CurrencyEdge(self.nodes[3], self.nodes[2], 0.82)]
+    G = CurrencyGraph(nodes, edges)
+    output = simplified_dijkstra(G, nodes[0], 3)
+    ```
     """
-    pass
+
+    lambda_values = {node: 0.0 for node in G.nodes}
+    lambda_values[start_currency] = 1.0
+
+    best_paths = {node: [start_currency] for node in G.nodes}
+
+    for edge in G.get_edges_from_source(start_currency):
+        lambda_values[edge.target] = edge.weight
+        best_paths[edge.target] = [start_currency, edge.target]
+
+    for k in range(1, n_passages):
+        print(f"Passage {k}")
+
+        temp_lambda_values = lambda_values.copy()
+        temp_best_paths = best_paths.copy()
+
+        for node in G.nodes:
+            print(f"\tNode {node}")
+            max_value = lambda_values[node]
+            best_path = best_paths[node]
+
+            for target_node in G.nodes:
+                edge_weight = G.get_edge_weight(target_node, node)
+                if edge_weight > 0:
+                    new_value = lambda_values[target_node] * edge_weight
+                    print(f"\t\t{target_node} -> {node}: "
+                          f"{lambda_values[target_node]}*"
+                          f"{edge_weight}={new_value}")
+                    if new_value > max_value:
+                        max_value = new_value
+                        best_path = best_paths[target_node] + [node]
+
+            temp_lambda_values[node] = max_value
+            temp_best_paths[node] = best_path
+
+        lambda_values = temp_lambda_values
+        best_paths = temp_best_paths
+
+    final_cycle = (best_paths[start_currency]
+                   if best_paths[start_currency][-1] == start_currency
+                   else best_paths[start_currency] + [start_currency])
+
+    max_profit = lambda_values[start_currency]
+
+    return final_cycle, max_profit

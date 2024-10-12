@@ -48,6 +48,24 @@ class CurrencyNode:
 
         return self.name == other.name
 
+    def __hash__(self) -> int:
+        """
+        Returns the hash value of the CurrencyNode object.
+
+        ## Returns
+            The hash value of the CurrencyNode object.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode
+
+        node_usd = CurrencyNode('USD')
+        print(hash(node_usd))
+        ```
+        """
+
+        return hash(self.name)
+
 
 @dataclass
 class CurrencyEdge:
@@ -184,6 +202,38 @@ class CurrencyGraph:
                                 columns=[node.name for node in self._nodes])
 
         return adj_matrix
+
+    def get_edge_weight(self,
+                        source: CurrencyNode,
+                        target: CurrencyNode) -> float:
+        """
+        Returns the weight of the edge between two nodes.
+
+        ## Parameters
+            `source`: The source node of the edge.
+            `target`: The target node of the edge.
+
+        ## Returns
+            The weight of the edge between the source and target nodes.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyEdge, CurrencyGraph
+
+        nodes = [CurrencyNode('USD'), CurrencyNode('EUR')]
+        edges = [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8)]
+        graph = CurrencyGraph(nodes, edges)
+        weight = graph.get_edge_weight(CurrencyNode('USD'),
+        CurrencyNode('EUR'))
+        print(weight)
+        ```
+        """
+
+        for edge in self._edges:
+            if edge.source == source and edge.target == target:
+                return edge.weight
+
+        raise ValueError(f"Edge from {source} to {target} not found.")
 
     def get_edges_from_source(self,
                               node: CurrencyNode) -> List[CurrencyEdge]:
