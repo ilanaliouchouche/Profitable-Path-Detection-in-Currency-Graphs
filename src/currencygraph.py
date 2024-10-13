@@ -264,28 +264,53 @@ class CurrencyGraph:
 
     def show(self) -> None:
         """
-        Displays the currency graph using NetworkX and Matplotlib.
+        Displays the currency graph using NetworkX and Matplotlib, showing
+        the valuation in both directions and excluding self-loops.
 
         ## Example
         ```py
+        from currencygraph import CurrencyNode, CurrencyEdge, CurrencyGraph
+
+        nodes = [CurrencyNode('USD'), CurrencyNode('EUR'), CurrencyNode('GBP'),
+        CurrencyNode('JPY')]
+
+        edges = [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8),
+        CurrencyEdge(CurrencyNode('EUR'), CurrencyNode('GBP'), 0.9),
+        CurrencyEdge(CurrencyNode('GBP'), CurrencyNode('JPY'), 0.7),
+        CurrencyEdge(CurrencyNode('JPY'), CurrencyNode('USD'), 0.6)]
+
         graph = CurrencyGraph(nodes, edges)
         graph.show()
         ```
         """
+
         G = nx.DiGraph()
 
         for node in self._nodes:
             G.add_node(node.name)
-        for edge in self._edges:
-            G.add_edge(edge.source.name, edge.target.name, weight=edge.weight)
 
-        pos = nx.spring_layout(G)
+        for edge in self._edges:
+            if edge.source.name != edge.target.name:
+                G.add_edge(edge.source.name, edge.target.name,
+                           weight=edge.weight)
+
+        pos = {
+            self._nodes[0].name: (0, 0),
+            self._nodes[1].name: (1, 0),
+            self._nodes[2].name: (1, 1),
+            self._nodes[3].name: (0, 1),
+        }
+
         nx.draw(G, pos, with_labels=True, node_size=3000,
-                node_color='lightblue', font_size=10,
-                font_weight='bold', arrows=True)
+                node_color='gray', font_size=10,
+                font_weight='bold', arrows=True,
+                connectionstyle="arc3,rad=0.2")
+
         edge_labels = {(edge.source.name, edge.target.name): f'{edge.weight}'
-                       for edge in self._edges}
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+                       for edge in self._edges
+                       if edge.source.name != edge.target.name}
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels,
+                                     label_pos=0.3)
 
         plt.show()
 
