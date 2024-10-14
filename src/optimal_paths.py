@@ -190,13 +190,15 @@ def simplified_dijkstra(G: CurrencyGraph,
 
     best_paths = {node: [start_currency] for node in G.nodes}
 
-    node_callback(start_currency)
+    if node_callback:
+        node_callback(start_currency)
 
     for edge in G.get_edges_from_source(start_currency):
         lambda_values[edge.target] = edge.weight
         best_paths[edge.target] = [start_currency, edge.target]
 
-        edge_callback(edge)
+        if edge_callback:
+            edge_callback(edge)
 
     for k in range(1, n_passages):
         if verbose:
@@ -206,7 +208,8 @@ def simplified_dijkstra(G: CurrencyGraph,
         temp_best_paths = best_paths.copy()
 
         for node in G.nodes:
-            node_callback(node)
+            if node_callback:
+                node_callback(node)
 
             if verbose:
                 print(f"\tNode {node}")
@@ -225,7 +228,9 @@ def simplified_dijkstra(G: CurrencyGraph,
                         max_value = new_value
                         best_path = best_paths[target_node] + [node]
 
-                    edge_callback(CurrencyEdge(target_node, node, edge_weight))
+                    if edge_callback:
+                        edge_callback(CurrencyEdge(target_node, node,
+                                                   edge_weight))
 
             temp_lambda_values[node] = max_value
             temp_best_paths[node] = best_path
