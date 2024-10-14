@@ -1,5 +1,6 @@
 from src.currencygraph import CurrencyGraph, CurrencyNode
 from typing import List, Tuple
+import numpy as np
 
 
 def brute_force(G: CurrencyGraph,
@@ -22,22 +23,22 @@ def brute_force(G: CurrencyGraph,
     ```py
     nodes = [CurrencyNode('E'), CurrencyNode('D'),
              CurrencyNode('L'), CurrencyNode('F')]
-    edges = [CurrencyEdge(self.nodes[0], self.nodes[0], 1.0),
-             CurrencyEdge(self.nodes[1], self.nodes[1], 1.0),
-             CurrencyEdge(self.nodes[2], self.nodes[2], 1.0),
-             CurrencyEdge(self.nodes[3], self.nodes[3], 1.0),
-             CurrencyEdge(self.nodes[0], self.nodes[1], 1.19),
-             CurrencyEdge(self.nodes[1], self.nodes[0], 0.84),
-             CurrencyEdge(self.nodes[0], self.nodes[2], 1.33),
-             CurrencyEdge(self.nodes[2], self.nodes[0], 0.75),
-             CurrencyEdge(self.nodes[0], self.nodes[3], 1.62),
-             CurrencyEdge(self.nodes[3], self.nodes[0], 0.62),
-             CurrencyEdge(self.nodes[1], self.nodes[2], 1.12),
-             CurrencyEdge(self.nodes[2], self.nodes[1], 0.89),
-             CurrencyEdge(self.nodes[1], self.nodes[3], 1.37),
-             CurrencyEdge(self.nodes[3], self.nodes[1], 0.73),
-             CurrencyEdge(self.nodes[2], self.nodes[3], 1.22),
-             CurrencyEdge(self.nodes[3], self.nodes[2], 0.82)]
+    edges = [CurrencyEdge(nodes[0],nodes[0], 1.0),
+             CurrencyEdge(nodes[1],nodes[1], 1.0),
+             CurrencyEdge(nodes[2],nodes[2], 1.0),
+             CurrencyEdge(nodes[3],nodes[3], 1.0),
+             CurrencyEdge(nodes[0],nodes[1], 1.19),
+             CurrencyEdge(nodes[1],nodes[0], 0.84),
+             CurrencyEdge(nodes[0],nodes[2], 1.33),
+             CurrencyEdge(nodes[2],nodes[0], 0.75),
+             CurrencyEdge(nodes[0],nodes[3], 1.62),
+             CurrencyEdge(nodes[3],nodes[0], 0.62),
+             CurrencyEdge(nodes[1],nodes[2], 1.12),
+             CurrencyEdge(nodes[2],nodes[1], 0.89),
+             CurrencyEdge(nodes[1],nodes[3], 1.37),
+             CurrencyEdge(nodes[3],nodes[1], 0.73),
+             CurrencyEdge(nodes[2],nodes[3], 1.22),
+             CurrencyEdge(nodes[3],nodes[2], 0.82)]
     G = CurrencyGraph(nodes, edges)
     output = brute_force(G, nodes[0])
     ```
@@ -62,6 +63,68 @@ def brute_force(G: CurrencyGraph,
     return max(all_cycles_with_profits, key=lambda x: x[1])
 
 
+def log_brute_force(G: CurrencyGraph,
+                    start_currency: CurrencyNode
+                    ) -> Tuple[List[CurrencyNode], float]:
+    """
+    Brute force algorithm to find all possible cycles that start and end at
+    the given start_currency in a currency graph while calculating their
+    profits using logarithmic transformation of edge weights to turn
+    multiplications into additions.
+
+    ## Parameters:
+        `G`: The currency graph to be analyzed.
+        `start_currency`: The currency node to start the cycle from.
+
+    ## Returns:
+        A list of currency nodes representing the most profitable cycle,
+        and the associated profit (in its original form, not log-transformed).
+
+    ## Example:
+    ```py
+    nodes = [CurrencyNode('E'), CurrencyNode('D'),
+             CurrencyNode('L'), CurrencyNode('F')]
+    edges = [CurrencyEdge(nodes[0], nodes[0], 1.0),
+             CurrencyEdge(nodes[1], nodes[1], 1.0),
+             CurrencyEdge(nodes[2], nodes[2], 1.0),
+             CurrencyEdge(nodes[3], nodes[3], 1.0),
+             CurrencyEdge(nodes[0], nodes[1], 1.19),
+             CurrencyEdge(nodes[1], nodes[0], 0.84),
+             CurrencyEdge(nodes[0], nodes[2], 1.33),
+             CurrencyEdge(nodes[2], nodes[0], 0.75),
+             CurrencyEdge(nodes[0], nodes[3], 1.62),
+             CurrencyEdge(nodes[3], nodes[0], 0.62),
+             CurrencyEdge(nodes[1], nodes[2], 1.12),
+             CurrencyEdge(nodes[2], nodes[1], 0.89),
+             CurrencyEdge(nodes[1], nodes[3], 1.37),
+             CurrencyEdge(nodes[3], nodes[1], 0.73),
+             CurrencyEdge(nodes[2], nodes[3], 1.22),
+             CurrencyEdge(nodes[3], nodes[2], 0.82)]
+    G = CurrencyGraph(nodes, edges)
+    output = log_brute_force(G, nodes[0])
+    ```
+    """
+
+    stack = [(start_currency, [start_currency], 0.0)]
+    all_cycles_with_profits = []
+
+    while stack:
+        current_node, path, current_log_profit = stack.pop()
+
+        for edge in G.get_edges_from_source(current_node):
+            next_node = edge.target
+            new_log_profit = current_log_profit + np.log(edge.weight)
+
+            if next_node == start_currency and len(path) > 1:
+                all_cycles_with_profits.append((path + [start_currency],
+                                                np.exp(new_log_profit)))
+            elif next_node not in path:
+                stack.append((next_node, path + [next_node], new_log_profit))
+
+    best_pair = max(all_cycles_with_profits, key=lambda x: x[1])
+    return best_pair[0], best_pair[1]
+
+
 def simplified_dijkstra(G: CurrencyGraph,
                         start_currency: CurrencyNode,
                         n_passages: int
@@ -84,22 +147,22 @@ def simplified_dijkstra(G: CurrencyGraph,
     ```py
     nodes = [CurrencyNode('E'), CurrencyNode('D'),
              CurrencyNode('L'), CurrencyNode('F')]
-    edges = [CurrencyEdge(self.nodes[0], self.nodes[0], 1.0),
-             CurrencyEdge(self.nodes[1], self.nodes[1], 1.0),
-             CurrencyEdge(self.nodes[2], self.nodes[2], 1.0),
-             CurrencyEdge(self.nodes[3], self.nodes[3], 1.0),
-             CurrencyEdge(self.nodes[0], self.nodes[1], 1.19),
-             CurrencyEdge(self.nodes[1], self.nodes[0], 0.84),
-             CurrencyEdge(self.nodes[0], self.nodes[2], 1.33),
-             CurrencyEdge(self.nodes[2], self.nodes[0], 0.75),
-             CurrencyEdge(self.nodes[0], self.nodes[3], 1.62),
-             CurrencyEdge(self.nodes[3], self.nodes[0], 0.62),
-             CurrencyEdge(self.nodes[1], self.nodes[2], 1.12),
-             CurrencyEdge(self.nodes[2], self.nodes[1], 0.89),
-             CurrencyEdge(self.nodes[1], self.nodes[3], 1.37),
-             CurrencyEdge(self.nodes[3], self.nodes[1], 0.73),
-             CurrencyEdge(self.nodes[2], self.nodes[3], 1.22),
-             CurrencyEdge(self.nodes[3], self.nodes[2], 0.82)]
+    edges = [CurrencyEdge(nodes[0], nodes[0], 1.0),
+             CurrencyEdge(nodes[1], nodes[1], 1.0),
+             CurrencyEdge(nodes[2], nodes[2], 1.0),
+             CurrencyEdge(nodes[3], nodes[3], 1.0),
+             CurrencyEdge(nodes[0], nodes[1], 1.19),
+             CurrencyEdge(nodes[1], nodes[0], 0.84),
+             CurrencyEdge(nodes[0], nodes[2], 1.33),
+             CurrencyEdge(nodes[2], nodes[0], 0.75),
+             CurrencyEdge(nodes[0], nodes[3], 1.62),
+             CurrencyEdge(nodes[3], nodes[0], 0.62),
+             CurrencyEdge(nodes[1], nodes[2], 1.12),
+             CurrencyEdge(nodes[2], nodes[1], 0.89),
+             CurrencyEdge(nodes[1], nodes[3], 1.37),
+             CurrencyEdge(nodes[3], nodes[1], 0.73),
+             CurrencyEdge(nodes[2], nodes[3], 1.22),
+             CurrencyEdge(nodes[3], nodes[2], 0.82)]
     G = CurrencyGraph(nodes, edges)
     output = simplified_dijkstra(G, nodes[0], 3)
     ```
