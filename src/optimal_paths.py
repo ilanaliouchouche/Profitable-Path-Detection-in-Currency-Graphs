@@ -1,10 +1,12 @@
-from src.currencygraph import CurrencyGraph, CurrencyNode
-from typing import List, Tuple
+from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
+from typing import List, Tuple, Callable
 import numpy as np
 
 
 def brute_force(G: CurrencyGraph,
-                start_currency: CurrencyNode
+                start_currency: CurrencyNode,
+                node_callback: Callable[[CurrencyNode], None] = None,
+                edge_callback: Callable[[CurrencyEdge], None] = None
                 ) -> Tuple[List[CurrencyNode], float]:
     """
     Brute force algorithm to find all possible cycles that start and end at
@@ -21,6 +23,7 @@ def brute_force(G: CurrencyGraph,
 
     ## Example
     ```py
+    from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
     nodes = [CurrencyNode('E'), CurrencyNode('D'),
              CurrencyNode('L'), CurrencyNode('F')]
     edges = [CurrencyEdge(nodes[0],nodes[0], 1.0),
@@ -50,9 +53,15 @@ def brute_force(G: CurrencyGraph,
     while stack:
         current_node, path, current_profit = stack.pop()
 
+        if node_callback:
+            node_callback(current_node)
+
         for edge in G.get_edges_from_source(current_node):
             next_node = edge.target
             new_profit = current_profit * edge.weight
+
+            if edge_callback:
+                edge_callback(edge)
 
             if next_node == start_currency and len(path) > 1:
                 all_cycles_with_profits.append((path + [start_currency],
@@ -121,13 +130,16 @@ def log_brute_force(G: CurrencyGraph,
             elif next_node not in path:
                 stack.append((next_node, path + [next_node], new_log_profit))
 
-    best_pair = max(all_cycles_with_profits, key=lambda x: x[1])
-    return best_pair[0], best_pair[1]
+    return max(all_cycles_with_profits, key=lambda x: x[1])
+
 
 
 def simplified_dijkstra(G: CurrencyGraph,
                         start_currency: CurrencyNode,
-                        n_passages: int
+                        n_passages: int,
+                        node_callback: Callable[[CurrencyNode], None] = None,
+                        edge_callback: Callable[[CurrencyEdge], None] = None,
+                        verbose: bool = False
                         ) -> Tuple[List[CurrencyNode], float]:
     """
     A crafted dijkstra algorithm to find the most profitable cycle that
@@ -138,6 +150,11 @@ def simplified_dijkstra(G: CurrencyGraph,
         `G`: The currency graph to analyze.
         `start_currency`: The currency node to start and end the cycle from.
         `n_passages`: The maximum number of exchanges (passages) allowed.
+        `node_callback`: A callback function to be called for each node
+                         visited.
+        `edge_callback`: A callback function to be called for each edge
+                         visited.l
+        `verbose`: If True, print the progress of the algorithm.
 
     ## Returns
         The most profitable cycle (list of CurrencyNodes)
@@ -145,6 +162,7 @@ def simplified_dijkstra(G: CurrencyGraph,
 
     ## Example
     ```py
+    from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
     nodes = [CurrencyNode('E'), CurrencyNode('D'),
              CurrencyNode('L'), CurrencyNode('F')]
     edges = [CurrencyEdge(nodes[0], nodes[0], 1.0),
@@ -173,18 +191,29 @@ def simplified_dijkstra(G: CurrencyGraph,
 
     best_paths = {node: [start_currency] for node in G.nodes}
 
+    if node_callback:
+        node_callback(start_currency)
+
     for edge in G.get_edges_from_source(start_currency):
         lambda_values[edge.target] = edge.weight
         best_paths[edge.target] = [start_currency, edge.target]
 
+        if edge_callback:
+            edge_callback(edge)
+
     for k in range(1, n_passages):
-        print(f"Passage {k}")
+        if verbose:
+            print(f"Passage {k}")
 
         temp_lambda_values = lambda_values.copy()
         temp_best_paths = best_paths.copy()
 
         for node in G.nodes:
-            print(f"\tNode {node}")
+            if node_callback:
+                node_callback(node)
+
+            if verbose:
+                print(f"\tNode {node}")
             max_value = lambda_values[node]
             best_path = best_paths[node]
 
@@ -192,12 +221,17 @@ def simplified_dijkstra(G: CurrencyGraph,
                 edge_weight = G.get_edge_weight(target_node, node)
                 if edge_weight > 0:
                     new_value = lambda_values[target_node] * edge_weight
-                    print(f"\t\t{target_node} -> {node}: "
-                          f"{lambda_values[target_node]}*"
-                          f"{edge_weight}={new_value}")
+                    if verbose:
+                        print(f"\t\t{target_node} -> {node}: "
+                              f"{lambda_values[target_node]}*"
+                              f"{edge_weight}={new_value}")
                     if new_value > max_value:
                         max_value = new_value
                         best_path = best_paths[target_node] + [node]
+
+                    if edge_callback:
+                        edge_callback(CurrencyEdge(target_node, node,
+                                                   edge_weight))
 
             temp_lambda_values[node] = max_value
             temp_best_paths[node] = best_path
