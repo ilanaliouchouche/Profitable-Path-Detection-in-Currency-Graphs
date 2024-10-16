@@ -11,7 +11,7 @@ setup(
         'pandas==2.2.2',
         'networkx==3.1',
         'matplotlib==3.8',
-        'tqdm==4.66.1',
+        'tqdm==4.66.3',
     ],
     python_requires='>=3.10',
 )
