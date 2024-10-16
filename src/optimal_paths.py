@@ -133,7 +133,6 @@ def log_brute_force(G: CurrencyGraph,
     return max(all_cycles_with_profits, key=lambda x: x[1])
 
 
-
 def simplified_dijkstra(G: CurrencyGraph,
                         start_currency: CurrencyNode,
                         n_passages: int,
