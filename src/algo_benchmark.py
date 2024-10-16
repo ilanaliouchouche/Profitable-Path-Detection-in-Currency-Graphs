@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import random
 from time import perf_counter
 from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
@@ -33,6 +34,9 @@ class AlgoBenchmark:
         self.seed = seed
         np.random.seed(seed)
         random.seed(seed)
+        self.time_results = defaultdict(lambda: defaultdict(list))
+        self.complexity_results = defaultdict(lambda: defaultdict(list))
+        self.__ran = False
 
     def run(self,
             algorithms: Sequence[Callable[
@@ -80,6 +84,13 @@ class AlgoBenchmark:
         )
         ```
         """
+
+        if self.__ran:
+            raise ValueError("This benchmark has already been run. "
+                             "Please create a new instance to run another "
+                             "benchmark.")
+
+        self._ran = True
 
         np.random.seed(self.seed)
         random.seed(self.seed)
@@ -168,6 +179,8 @@ class AlgoBenchmark:
                     print(f"  {algo} Avg Edges Traversed: {avg_edges:.2f} "
                           f"(95% CI: [{ci_edges_low:.2f}, {ci_edges_up:.2f}])")
 
+        self.time_results = results
+        self.complexity_results = complexity_results
         return results, complexity_results
 
     @staticmethod
@@ -285,3 +298,99 @@ class AlgoBenchmark:
         plt.tight_layout()
 
         plt.show()
+
+    def to_csv(self,
+               output_file: str) -> None:
+        """
+        Converts the time and complexity results into a DataFrame and saves
+        them as a CSV file.
+
+        ## Parameters:
+            `output_file`: The path where the CSV file will be saved.
+
+        ## Example:
+        ```py
+        from src.optimal_paths import simplified_dijkstra, brute_force
+
+        benchmark = AlgoBenchmark(seed=42)
+        _, _ = benchmark.run(
+            algorithms=[simplified_dijkstra, brute_force],
+            node_sizes=[5, 10, 15],
+            num_trials=10,
+            scale=0.4
+        )
+        benchmark.to_csv("benchmark_results.csv")
+        ```
+        """
+
+        data = []
+
+        for algo, node_sizes in self.time_results.items():
+            for num_nodes, times in node_sizes.items():
+                avg_time = pd.Series(times).mean()
+                ci_lower_time = pd.Series(times).quantile(0.025)
+                ci_upper_time = pd.Series(times).quantile(0.975)
+
+                avg_nodes = pd.Series(
+                    [comp['nodes'] for comp in self.complexity_results[algo]
+                     [num_nodes]]).mean()
+                ci_lower_nodes = pd.Series(
+                    [comp['nodes'] for comp in self.complexity_results[algo]
+                     [num_nodes]]).quantile(0.025)
+                ci_upper_nodes = pd.Series(
+                    [comp['nodes'] for comp in self.complexity_results[algo]
+                     [num_nodes]]).quantile(0.975)
+
+                avg_edges = pd.Series(
+                    [comp['edges'] for comp in self.complexity_results[algo]
+                     [num_nodes]]).mean()
+                ci_lower_edges = pd.Series(
+                    [comp['edges'] for comp in self.complexity_results[algo]
+                     [num_nodes]]).quantile(0.025)
+                ci_upper_edges = pd.Series(
+                    [comp['edges'] for comp in self.complexity_results[algo]
+                     [num_nodes]]).quantile(0.975)
+
+                data.append({
+                    'Algorithm': algo,
+                    'Number of Nodes': num_nodes,
+                    'Avg Time (s)': avg_time,
+                    'CI Lower Time (s)': ci_lower_time,
+                    'CI Upper Time (s)': ci_upper_time,
+                    'Avg Nodes Visited': avg_nodes,
+                    'CI Lower Nodes': ci_lower_nodes,
+                    'CI Upper Nodes': ci_upper_nodes,
+                    'Avg Edges Traversed': avg_edges,
+                    'CI Lower Edges': ci_lower_edges,
+                    'CI Upper Edges': ci_upper_edges
+                })
+
+        df = pd.DataFrame(data)
+        df.to_csv(output_file, index=False)
+        return df
+
+
+if __name__ == "__main__":
+
+    from src.optimal_paths import (simplified_dijkstra,
+                                   brute_force,
+                                   log_brute_force)
+    from datetime import datetime
+    import os
+
+    BENCH_APP = os.path.join(os.path.dirname(__file__), '../app/bench_app/')
+
+    today = datetime.today().strftime('%Y-%m-%d')
+
+    benchmark = AlgoBenchmark(seed=42)
+    results, complexity_results = benchmark.run(
+        algorithms=[simplified_dijkstra, brute_force, log_brute_force],
+        node_sizes=[2, 3, 4, 5, 6, 7],
+        num_trials=10,
+        scale=0.4
+    )
+
+    # benchmark.plot_time_with_ci(results)
+    # benchmark.plot_complexity_with_ci(complexity_results)
+
+    benchmark.to_csv(f"{BENCH_APP}results.csv")
