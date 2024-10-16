@@ -1,6 +1,6 @@
 import unittest
 from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
-from src.optimal_paths import brute_force, simplified_dijkstra
+from src.optimal_paths import brute_force, log_brute_force, simplified_dijkstra
 import numpy as np
 
 
@@ -43,6 +43,17 @@ class TestOptimalPaths(unittest.TestCase):
         """
 
         output = brute_force(self.G, self.nodes[0])
+
+        self.assertEqual(output[0], self.output_path)
+        self.assertTrue(np.isclose(output[1], self.product_profit, rtol=1e-6))
+
+    def test_log_brute_force(self):
+        """
+        Test the log brute force algorithm to find the most profitable cycle in
+        a currency graph.
+        """
+
+        output = log_brute_force(self.G, self.nodes[0])
 
         self.assertEqual(output[0], self.output_path)
         self.assertTrue(np.isclose(output[1], self.product_profit, rtol=1e-6))
