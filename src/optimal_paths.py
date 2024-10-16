@@ -16,6 +16,10 @@ def brute_force(G: CurrencyGraph,
     ## Attributes
         `G`: The currency graph to be analyzed.
         `start_currency`: The currency node to start the cycle from.
+        `node_callback`: A callback function to be called for each node
+                         visited.
+        `edge_callback`: A callback function to be called for each edge
+                         visited.
 
     ## Returns
         A list of tuples where each tuple contains a list of currency nodes
@@ -73,7 +77,9 @@ def brute_force(G: CurrencyGraph,
 
 
 def log_brute_force(G: CurrencyGraph,
-                    start_currency: CurrencyNode
+                    start_currency: CurrencyNode,
+                    node_callback: Callable[[CurrencyNode], None] = None,
+                    edge_callback: Callable[[CurrencyEdge], None] = None
                     ) -> Tuple[List[CurrencyNode], float]:
     """
     Brute force algorithm to find all possible cycles that start and end at
@@ -84,6 +90,10 @@ def log_brute_force(G: CurrencyGraph,
     ## Parameters:
         `G`: The currency graph to be analyzed.
         `start_currency`: The currency node to start the cycle from.
+        `node_callback`: A callback function to be called for each node
+                         visited.
+        `edge_callback`: A callback function to be called for each edge
+                         visited.
 
     ## Returns:
         A list of currency nodes representing the most profitable cycle,
@@ -120,9 +130,15 @@ def log_brute_force(G: CurrencyGraph,
     while stack:
         current_node, path, current_log_profit = stack.pop()
 
+        if node_callback:
+            node_callback(current_node)
+
         for edge in G.get_edges_from_source(current_node):
             next_node = edge.target
             new_log_profit = current_log_profit + np.log(edge.weight)
+
+            if edge_callback:
+                edge_callback(edge)
 
             if next_node == start_currency and len(path) > 1:
                 all_cycles_with_profits.append((path + [start_currency],
