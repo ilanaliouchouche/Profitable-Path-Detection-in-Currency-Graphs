@@ -21,6 +21,13 @@ class AlgoBenchmark:
 
         ## Parameters:
             `seed`: Seed for the random number generator.
+
+        ## Example:
+        ```py
+
+        from src.algo_benchmark import AlgoBenchmark
+        benchmark = AlgoBenchmark(seed=42)
+        ```
         """
 
         self.seed = seed
@@ -41,14 +48,12 @@ class AlgoBenchmark:
             ) -> defaultdict:
         """
         Runs the provided algorithms and measures both execution time and
-        complexity (nodes visited and edges traversed).
+        complexity.
 
         ## Parameters:
             `algorithms`: List of algorithms to compare. Each algorithm should
                           take a graph, a start node, and optionally an
                           integer parameter (n_passages).
-            `node_sizes`: List of integers specifying the number of nodes for
-                          each graph.
             `num_trials`: Number of trials for each graph size to average
                           the results.
             `scale`: Standard deviation of the normal distribution used to
@@ -56,7 +61,7 @@ class AlgoBenchmark:
             `n_passages_fn`: Optional function that takes a graph and returns
                              an integer (n_passages). If None, n_passages will
                              be set to (number of nodes - 1).
-            `verbose`: If True, print the progress of the benchmark.
+            `verbose`: Print the progress of the benchmark.
 
         ## Returns:
             A dictionary containing the execution time and complexity results
