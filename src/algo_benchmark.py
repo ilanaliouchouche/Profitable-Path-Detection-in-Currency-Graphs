@@ -65,7 +65,7 @@ class AlgoBenchmark:
             `n_passages_fn`: Function to calculate the number of passages.
             `verbose`: Whether to print the results.
 
-        ## Returns:
+        ## Returns
             A tuple containing time, complexity, and memory usage statistics.
 
         ## Example
