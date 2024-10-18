@@ -7,6 +7,7 @@ from typing import Sequence, Callable, Optional, Tuple, List
 from collections import defaultdict
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
+import tracemalloc
 
 
 class AlgoBenchmark:
@@ -36,6 +37,7 @@ class AlgoBenchmark:
         random.seed(seed)
         self.time_results = defaultdict(lambda: defaultdict(list))
         self.complexity_results = defaultdict(lambda: defaultdict(list))
+        self.memory_results = defaultdict(lambda: defaultdict(list))
         self.__ran = False
 
     def run(self,
@@ -49,34 +51,30 @@ class AlgoBenchmark:
             scale: float = 0.4,
             n_passages_fn: Optional[Callable[[CurrencyGraph], int]] = None,
             verbose: bool = False
-            ) -> defaultdict:
+            ) -> Tuple[defaultdict, defaultdict, defaultdict]:
         """
-        Runs the provided algorithms and measures both execution time and
-        complexity.
+        Runs the provided algorithms and measures both execution time,
+        memory usage, and complexity.
 
         ## Parameters:
-            `algorithms`: List of algorithms to compare. Each algorithm should
-                          take a graph, a start node, and optionally an
-                          integer parameter (n_passages).
-            `num_trials`: Number of trials for each graph size to average
-                          the results.
-            `scale`: Standard deviation of the normal distribution used to
-                     generate edge weights.
-            `n_passages_fn`: Optional function that takes a graph and returns
-                             an integer (n_passages). If None, n_passages will
-                             be set to (number of nodes - 1).
-            `verbose`: Print the progress of the benchmark.
+            `algorithms`: List of algorithms to benchmark.
+            `node_sizes`: List of number of nodes to simulate.
+            `num_trials`: Number of trials to run for each number of nodes.
+            `scale`: Scale parameter for the normal distribution of edge
+                     weights.
+            `n_passages_fn`: Function to calculate the number of passages.
+            `verbose`: Whether to print the results.
 
         ## Returns:
-            A dictionary containing the execution time and complexity results
-            for each algorithm.
+            A tuple containing time, complexity, and memory usage statistics.
 
         ## Example:
         ```py
+        from src.algo_benchmark import AlgoBenchmark
         from src.optimal_paths import simplified_dijkstra, brute_force
 
         benchmark = AlgoBenchmark(seed=42)
-        results, complexity_results = benchmark.run(
+        time_results, complexity_results, memory_results = benchmark.run(
             algorithms=[simplified_dijkstra, brute_force],
             node_sizes=[5, 10, 15],
             num_trials=10,
@@ -96,6 +94,7 @@ class AlgoBenchmark:
         random.seed(self.seed)
         results = defaultdict(lambda: defaultdict(list))
         complexity_results = defaultdict(lambda: defaultdict(list))
+        memory_results = defaultdict(lambda: defaultdict(list))
 
         for num_nodes in tqdm(node_sizes, desc="Simulating some graphs"):
             for _ in range(num_trials):
@@ -127,6 +126,8 @@ class AlgoBenchmark:
                         nonlocal traversed_edges
                         traversed_edges += 1
 
+                    tracemalloc.start()
+
                     start_time = perf_counter()
 
                     try:
@@ -139,7 +140,14 @@ class AlgoBenchmark:
 
                     elapsed_time = perf_counter() - start_time
 
+                    current_usage, peak = tracemalloc.get_traced_memory()
+                    tracemalloc.stop()
+
+                    memory_used = peak / (1024 * 1024)
+
                     results[algo.__name__][num_nodes].append(elapsed_time)
+                    memory_results[algo.__name__][num_nodes].append(
+                        memory_used)
 
                     complexity_results[algo.__name__][num_nodes].append({
                         'nodes': len(visited_nodes),
@@ -154,26 +162,35 @@ class AlgoBenchmark:
                 ci_lower = np.percentile(times, 2.5)
                 ci_upper = np.percentile(times, 97.5)
 
+                avg_memory = np.mean(memory_results[algo][num_nodes])
+                ci_lower_memory = np.percentile(memory_results[algo]
+                                                [num_nodes], 2.5)
+                ci_upper_memory = np.percentile(memory_results[algo]
+                                                [num_nodes], 97.5)
+
                 avg_nodes = np.mean([comp['nodes'] for comp in
-                                     complexity_results[algo][num_nodes]])
+                                    complexity_results[algo][num_nodes]])
                 ci_nodes_low = np.percentile([comp['nodes'] for comp in
                                               complexity_results[algo]
                                               [num_nodes]], 2.5)
                 ci_nodes_up = np.percentile([comp['nodes'] for comp in
-                                             complexity_results[algo]
-                                             [num_nodes]], 97.5)
+                                            complexity_results[algo]
+                                            [num_nodes]], 97.5)
 
                 avg_edges = np.mean([comp['edges'] for comp in
-                                     complexity_results[algo][num_nodes]])
+                                    complexity_results[algo][num_nodes]])
                 ci_edges_low = np.percentile([comp['edges'] for comp in
                                               complexity_results[algo]
                                               [num_nodes]], 2.5)
                 ci_edges_up = np.percentile([comp['edges'] for comp in
-                                             complexity_results[algo]
-                                             [num_nodes]], 97.5)
+                                            complexity_results[algo]
+                                            [num_nodes]], 97.5)
                 if verbose:
                     print(f"  {algo} Avg Time: {avg_time:.6f}s (95% CI: "
                           f"[{ci_lower:.6f}, {ci_upper:.6f}])")
+                    print(f"  {algo} Avg Memory Usage: {avg_memory:.2f} MB "
+                          f"(95% CI: [{ci_lower_memory:.2f}, "
+                          f"{ci_upper_memory:.2f}])")
                     print(f"  {algo} Avg Nodes Visited: {avg_nodes:.2f} "
                           f"(95% CI: [{ci_nodes_low:.2f}, {ci_nodes_up:.2f}])")
                     print(f"  {algo} Avg Edges Traversed: {avg_edges:.2f} "
@@ -181,7 +198,9 @@ class AlgoBenchmark:
 
         self.time_results = results
         self.complexity_results = complexity_results
-        return results, complexity_results
+        self.memory_results = memory_results
+
+        return results, complexity_results, memory_results
 
     @staticmethod
     def plot_time_with_ci(results: defaultdict) -> None:
@@ -299,6 +318,54 @@ class AlgoBenchmark:
 
         plt.show()
 
+    @staticmethod
+    def plot_memory_with_ci(memory_results: defaultdict) -> None:
+        """
+        Static method to plot memory usage vs number of nodes,
+        with confidence intervals.
+
+        ## Parameters:
+            `memory_results`: Dictionary containing memory usage results.
+
+        ## Example:
+        ```py
+        from src.optimal_paths import simplified_dijkstra, brute_force
+
+        benchmark = AlgoBenchmark(seed=42)
+        _, _, memory_results = benchmark.run(
+            algorithms=[simplified_dijkstra, brute_force],
+            node_sizes=[5, 10, 15],
+            num_trials=10,
+            scale=0.4
+        )
+        AlgoBenchmark.plot_memory_with_ci(memory_results)
+        ```
+        """
+
+        plt.style.use('ggplot')
+
+        plt.figure(figsize=(10, 6))
+
+        for algo, data in memory_results.items():
+            node_sizes = sorted(data.keys())
+            avg_memory = [np.mean(data[n]) for n in node_sizes]
+            ci_memory_lower = [np.percentile(data[n], 2.5)
+                               for n in node_sizes]
+            ci_memory_upper = [np.percentile(data[n], 97.5)
+                               for n in node_sizes]
+
+            plt.plot(node_sizes, avg_memory, label=algo, marker='o')
+
+            plt.fill_between(node_sizes, ci_memory_lower, ci_memory_upper,
+                             alpha=0.2)
+
+        plt.xlabel("Number of Nodes (N)")
+        plt.ylabel("Memory Usage (MB)")
+        plt.title("Algorithm Performance: Memory Usage vs Number of Nodes")
+        plt.legend()
+
+        plt.show()
+
     def to_csv(self,
                output_file: str) -> None:
         """
@@ -351,6 +418,13 @@ class AlgoBenchmark:
                     [comp['edges'] for comp in self.complexity_results[algo]
                      [num_nodes]]).quantile(0.975)
 
+                avg_memory = pd.Series(self.memory_results[algo]
+                                       [num_nodes]).mean()
+                ci_lower_memory = pd.Series(self.memory_results[algo]
+                                            [num_nodes]).quantile(0.025)
+                ci_upper_memory = pd.Series(self.memory_results[algo]
+                                            [num_nodes]).quantile(0.975)
+
                 data.append({
                     'Algorithm': algo,
                     'Number of Nodes': num_nodes,
@@ -362,7 +436,10 @@ class AlgoBenchmark:
                     'CI Upper Nodes': ci_upper_nodes,
                     'Avg Edges Traversed': avg_edges,
                     'CI Lower Edges': ci_lower_edges,
-                    'CI Upper Edges': ci_upper_edges
+                    'CI Upper Edges': ci_upper_edges,
+                    'Avg Memory Usage (MB)': avg_memory,
+                    'CI Lower Memory (MB)': ci_lower_memory,
+                    'CI Upper Memory (MB)': ci_upper_memory
                 })
 
         df = pd.DataFrame(data)
@@ -383,14 +460,15 @@ if __name__ == "__main__":
     today = datetime.today().strftime('%Y-%m-%d')
 
     benchmark = AlgoBenchmark(seed=42)
-    results, complexity_results = benchmark.run(
+    time_results, complexity_results, memory_results = benchmark.run(
         algorithms=[simplified_dijkstra, brute_force, log_brute_force],
         node_sizes=[2, 3, 4, 5, 6, 7],
         num_trials=10,
         scale=0.4
     )
 
-    # benchmark.plot_time_with_ci(results)
+    # benchmark.plot_time_with_ci(time_results)
     # benchmark.plot_complexity_with_ci(complexity_results)
+    # benchmark.plot_memory_with_ci(memory_results)
 
     benchmark.to_csv(f"{BENCH_APP}results.csv")
