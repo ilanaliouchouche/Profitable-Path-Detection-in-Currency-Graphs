@@ -41,8 +41,12 @@ app.layout = html.Div(style={'backgroundColor': '#2a2a2a', 'padding': '20px'},
     html.Div([
         dcc.Graph(
             id='time-vs-nodes',
-            style={'padding': '20px'}
+            style={'display': 'inline-block', 'width': '48%'}
         ),
+        dcc.Graph(
+            id='memory-vs-nodes',
+            style={'display': 'inline-block', 'width': '48%'}
+        )
     ], style={'marginBottom': '50px'}),
 
     html.Div([
@@ -60,6 +64,7 @@ app.layout = html.Div(style={'backgroundColor': '#2a2a2a', 'padding': '20px'},
 
 @app.callback(
     [Output('time-vs-nodes', 'figure'),
+     Output('memory-vs-nodes', 'figure'),
      Output('edges-vs-nodes', 'figure'),
      Output('visited-nodes-vs-nodes', 'figure')],
     [Input('time-vs-nodes', 'id')]
@@ -105,6 +110,25 @@ def update_graphs(_):
         legend=dict(font=dict(color='#ffffff')),
     )
 
+    fig_memory = px.line(df, x='Number of Nodes', y='Avg Memory Usage (MB)',
+                         color='Algorithm',
+                         title='Memory Usage vs Number of Nodes',
+                         template='plotly_dark')
+
+    fig_memory.update_layout(
+        title_font_size=24,
+        title_x=0.5,
+        title_font_family='Arial',
+        font=dict(family="Arial", size=14, color='#ffffff'),
+        paper_bgcolor='#1e1e1e',
+        plot_bgcolor='#2e2e2e',
+        xaxis=dict(title='Number of Nodes (N)', color='#ffffff',
+                   gridcolor='rgba(255, 255, 255, 0.1)'),
+        yaxis=dict(title='Memory Usage (MB)', color='#ffffff',
+                   gridcolor='rgba(255, 255, 255, 0.1)'),
+        legend=dict(font=dict(color='#ffffff'))
+    )
+
     fig_edges = px.line(df, x='Number of Nodes', y='Avg Edges Traversed',
                         color='Algorithm',
                         title='Edges Traversed vs Number of Nodes',
@@ -143,7 +167,7 @@ def update_graphs(_):
         legend=dict(font=dict(color='#ffffff'))
     )
 
-    return fig_time, fig_edges, fig_nodes
+    return fig_time, fig_memory, fig_edges, fig_nodes
 
 
 if __name__ == '__main__':
