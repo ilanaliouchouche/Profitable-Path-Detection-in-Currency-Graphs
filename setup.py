@@ -12,6 +12,8 @@ setup(
         'networkx==3.1',
         'matplotlib==3.8',
         'tqdm==4.66.1',
+        'dash==2.8.1',
+        'plotly==5.24.1'
     ],
     python_requires='>=3.10',
 )
