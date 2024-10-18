@@ -331,7 +331,7 @@ def log_shifted_simplified_dijkstra(G: CurrencyGraph,
         node_callback(start_currency)
 
     for edge in G.get_edges_from_source(start_currency):
-        log_weight = np.log1p(edge.weight) + epsilon
+        log_weight = np.log(edge.weight) + epsilon
         lambda_values[edge.target] = log_weight
         best_paths[edge.target] = [start_currency, edge.target]
 
@@ -357,7 +357,7 @@ def log_shifted_simplified_dijkstra(G: CurrencyGraph,
             for target_node in G.nodes:
                 edge_weight = G.get_edge_weight(target_node, node)
                 if edge_weight > 0:
-                    log_weight = np.log1p(edge_weight) + epsilon
+                    log_weight = np.log(edge_weight) + epsilon
                     new_value = lambda_values[target_node] + log_weight
 
                     if verbose:
