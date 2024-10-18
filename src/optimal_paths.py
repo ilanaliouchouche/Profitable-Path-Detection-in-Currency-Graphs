@@ -87,7 +87,7 @@ def log_brute_force(G: CurrencyGraph,
     profits using logarithmic transformation of edge weights to turn
     multiplications into additions.
 
-    ## Parameters:
+    ## Parameters
         `G`: The currency graph to be analyzed.
         `start_currency`: The currency node to start the cycle from.
         `node_callback`: A callback function to be called for each node
@@ -95,11 +95,11 @@ def log_brute_force(G: CurrencyGraph,
         `edge_callback`: A callback function to be called for each edge
                          visited.
 
-    ## Returns:
+    ## Returns
         A list of currency nodes representing the most profitable cycle,
         and the associated profit (in its original form, not log-transformed).
 
-    ## Example:
+    ## Example
     ```py
     nodes = [CurrencyNode('E'), CurrencyNode('D'),
              CurrencyNode('L'), CurrencyNode('F')]
@@ -259,5 +259,133 @@ def simplified_dijkstra(G: CurrencyGraph,
                    else best_paths[start_currency] + [start_currency])
 
     max_profit = lambda_values[start_currency]
+
+    return final_cycle, max_profit
+
+
+def log_shifted_simplified_dijkstra(G: CurrencyGraph,
+                                    start_currency: CurrencyNode,
+                                    n_passages: int,
+                                    node_callback: Callable[[CurrencyNode],
+                                                            None] = None,
+                                    edge_callback: Callable[[CurrencyEdge],
+                                                            None] = None,
+                                    return_log_profit: bool = False,
+                                    verbose: bool = False
+                                    ) -> Tuple[List[CurrencyNode], float]:
+    """
+    A modified Dijkstra algorithm that uses logarithms to avoid underflow
+    when handling very small edge weights in a currency graph.
+
+    ## Parameters
+        `G`: The currency graph to analyze.
+        `start_currency`: The currency node to start and end the cycle from.
+        `n_passages`: The maximum number of exchanges (passages) allowed.
+        `node_callback`: A callback function to be called for each node
+                         visited.
+        `edge_callback`: A callback function to be called for each edge
+                         visited.
+        `return_log_profit`: If True, return the profit in log-transformed
+                             form.
+        `verbose`: If True, print the progress of the algorithm.
+
+    ## Returns
+        The most profitable cycle (list of CurrencyNodes) and
+        the corresponding profit.
+
+    ## Example
+    ```py
+    from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
+    nodes = [CurrencyNode('E'), CurrencyNode('D'),
+             CurrencyNode('L'), CurrencyNode('F')]
+    edges = [CurrencyEdge(nodes[0], nodes[0], 1.0),
+             CurrencyEdge(nodes[1], nodes[1], 1.0),
+             CurrencyEdge(nodes[2], nodes[2], 1.0),
+             CurrencyEdge(nodes[3], nodes[3], 1.0),
+             CurrencyEdge(nodes[0], nodes[1], 1.19),
+             CurrencyEdge(nodes[1], nodes[0], 0.84),
+             CurrencyEdge(nodes[0], nodes[2], 1.33),
+             CurrencyEdge(nodes[2], nodes[0], 0.75),
+             CurrencyEdge(nodes[0], nodes[3], 1.62),
+             CurrencyEdge(nodes[3], nodes[0], 0.62),
+             CurrencyEdge(nodes[1], nodes[2], 1.12),
+             CurrencyEdge(nodes[2], nodes[1], 0.89),
+             CurrencyEdge(nodes[1], nodes[3], 1.37),
+             CurrencyEdge(nodes[3], nodes[1], 0.73),
+             CurrencyEdge(nodes[2], nodes[3], 1.22),
+             CurrencyEdge(nodes[3], nodes[2], 0.82)]
+    G = CurrencyGraph(nodes, edges)
+    output = simplified_dijkstra(G, nodes[0], 3)
+    ```
+    """
+
+    min_edge_weight = min(edge.weight for edge in G.edges)
+    epsilon = abs(np.log(min_edge_weight))
+
+    lambda_values = {node: -float('inf') for node in G.nodes}
+    lambda_values[start_currency] = 0.0
+
+    best_paths = {node: [start_currency] for node in G.nodes}
+
+    if node_callback:
+        node_callback(start_currency)
+
+    for edge in G.get_edges_from_source(start_currency):
+        log_weight = np.log1p(edge.weight) + epsilon
+        lambda_values[edge.target] = log_weight
+        best_paths[edge.target] = [start_currency, edge.target]
+
+        if edge_callback:
+            edge_callback(edge)
+
+    for k in range(1, n_passages):
+        if verbose:
+            print(f"Passage {k}")
+
+        temp_lambda_values = lambda_values.copy()
+        temp_best_paths = best_paths.copy()
+
+        for node in G.nodes:
+            if node_callback:
+                node_callback(node)
+
+            if verbose:
+                print(f"\tNode {node}")
+            max_value = lambda_values[node]
+            best_path = best_paths[node]
+
+            for target_node in G.nodes:
+                edge_weight = G.get_edge_weight(target_node, node)
+                if edge_weight > 0:
+                    log_weight = np.log1p(edge_weight) + epsilon
+                    new_value = lambda_values[target_node] + log_weight
+
+                    if verbose:
+                        print(f"\t\t{target_node} -> {node}: "
+                              f"{lambda_values[target_node]} + "
+                              f"log({edge_weight}) + {epsilon} "
+                              f"= {new_value}")
+                    if new_value > max_value:
+                        max_value = new_value
+                        best_path = best_paths[target_node] + [node]
+
+                    if edge_callback:
+                        edge_callback(CurrencyEdge(target_node, node,
+                                                   edge_weight))
+
+            temp_lambda_values[node] = max_value
+            temp_best_paths[node] = best_path
+
+        lambda_values = temp_lambda_values
+        best_paths = temp_best_paths
+
+    final_cycle = (best_paths[start_currency]
+                   if best_paths[start_currency][-1] == start_currency
+                   else best_paths[start_currency] + [start_currency])
+
+    max_profit = (
+        np.exp(lambda_values[start_currency] - (len(final_cycle) - 1)
+               * epsilon) if not return_log_profit else
+        lambda_values[start_currency])
 
     return final_cycle, max_profit

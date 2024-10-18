@@ -21,10 +21,10 @@ class AlgoBenchmark:
         """
         Initializes the benchmarking class.
 
-        ## Parameters:
+        ## Parameters
             `seed`: Seed for the random number generator.
 
-        ## Example:
+        ## Example
         ```py
 
         from src.algo_benchmark import AlgoBenchmark
@@ -56,7 +56,7 @@ class AlgoBenchmark:
         Runs the provided algorithms and measures both execution time,
         memory usage, and complexity.
 
-        ## Parameters:
+        ## Parameters
             `algorithms`: List of algorithms to benchmark.
             `node_sizes`: List of number of nodes to simulate.
             `num_trials`: Number of trials to run for each number of nodes.
@@ -68,7 +68,7 @@ class AlgoBenchmark:
         ## Returns:
             A tuple containing time, complexity, and memory usage statistics.
 
-        ## Example:
+        ## Example
         ```py
         from src.algo_benchmark import AlgoBenchmark
         from src.optimal_paths import simplified_dijkstra, brute_force
@@ -208,11 +208,11 @@ class AlgoBenchmark:
         Static method to plot execution time vs number of samples,
         with confidence intervals.
 
-        ## Parameters:
+        ## Parameters
             `results`: Dictionary containing the execution times and
                        confidence intervals.
 
-        ## Example:
+        ## Example
         ```py
         from src.optimal_paths import simplified_dijkstra, brute_force
 
@@ -254,10 +254,10 @@ class AlgoBenchmark:
         Static method to plot complexity vs number of samples, with confidence
         intervals. Plots two graphs: one for nodes visited and one for edges.
 
-        ## Parameters:
+        ## Parameters
             `complexity_results`: Dictionary containing the complexity results.
 
-        ## Example:
+        ## Example
         ```py
         from src.optimal_paths import simplified_dijkstra, brute_force
 
@@ -324,10 +324,10 @@ class AlgoBenchmark:
         Static method to plot memory usage vs number of nodes,
         with confidence intervals.
 
-        ## Parameters:
+        ## Parameters
             `memory_results`: Dictionary containing memory usage results.
 
-        ## Example:
+        ## Example
         ```py
         from src.optimal_paths import simplified_dijkstra, brute_force
 
@@ -372,10 +372,10 @@ class AlgoBenchmark:
         Converts the time and complexity results into a DataFrame and saves
         them as a CSV file.
 
-        ## Parameters:
+        ## Parameters
             `output_file`: The path where the CSV file will be saved.
 
-        ## Example:
+        ## Example
         ```py
         from src.optimal_paths import simplified_dijkstra, brute_force
 

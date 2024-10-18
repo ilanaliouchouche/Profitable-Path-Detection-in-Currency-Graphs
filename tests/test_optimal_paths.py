@@ -1,6 +1,9 @@
 import unittest
 from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
-from src.optimal_paths import brute_force, log_brute_force, simplified_dijkstra
+from src.optimal_paths import (brute_force,
+                               log_brute_force,
+                               simplified_dijkstra,
+                               log_shifted_simplified_dijkstra)
 import numpy as np
 
 
@@ -65,6 +68,17 @@ class TestOptimalPaths(unittest.TestCase):
         """
 
         output = simplified_dijkstra(self.G, self.nodes[0], 3)
+
+        self.assertEqual(output[0], self.output_path)
+        self.assertTrue(np.isclose(output[1], self.product_profit, rtol=1e-6))
+
+    def test_log_shifted_simplified_dijkstra(self):
+        """
+        Test the log shifted simplified Dijkstra algorithm to find the most
+        profitable cycle in a currency graph.
+        """
+
+        output = log_shifted_simplified_dijkstra(self.G, self.nodes[0], 3)
 
         self.assertEqual(output[0], self.output_path)
         self.assertTrue(np.isclose(output[1], self.product_profit, rtol=1e-6))
