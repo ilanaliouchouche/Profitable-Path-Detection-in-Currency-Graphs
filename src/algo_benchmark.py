@@ -451,7 +451,8 @@ if __name__ == "__main__":
 
     from src.optimal_paths import (simplified_dijkstra,
                                    brute_force,
-                                   log_brute_force)
+                                   log_brute_force,
+                                   log_shifted_simplified_dijkstra)
     from datetime import datetime
     import os
 
@@ -461,7 +462,8 @@ if __name__ == "__main__":
 
     benchmark = AlgoBenchmark(seed=42)
     time_results, complexity_results, memory_results = benchmark.run(
-        algorithms=[simplified_dijkstra, brute_force, log_brute_force],
+        algorithms=[simplified_dijkstra, brute_force, log_brute_force,
+                    log_shifted_simplified_dijkstra],
         node_sizes=[2, 3, 4, 5, 6, 7],
         num_trials=10,
         scale=0.4
