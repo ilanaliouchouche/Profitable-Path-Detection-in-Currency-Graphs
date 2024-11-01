@@ -1,6 +1,9 @@
 from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
-from typing import List, Tuple, Callable
+from typing import List, Tuple, Callable, Optional
 import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import time
 
 
 def brute_force(G: CurrencyGraph,
@@ -9,7 +12,7 @@ def brute_force(G: CurrencyGraph,
                 edge_callback: Callable[[CurrencyEdge], None] = None
                 ) -> Tuple[List[CurrencyNode], float]:
     """
-    Brute force algorithm to find all possible cycles that start and end at
+    Brute force algorithm to find all possible cycsles that start and end at
     the given start_currency in a currency graph while calculating their
     profits.
 
@@ -389,3 +392,149 @@ def log_shifted_simplified_dijkstra(G: CurrencyGraph,
         lambda_values[start_currency])
 
     return final_cycle, max_profit
+
+
+def visualize_path(G: CurrencyGraph,
+                   algorithm: Callable[[CurrencyGraph,
+                                        CurrencyNode,
+                                        Optional[int]],
+                                       Tuple[List[CurrencyNode], float]],
+                   start_currency: CurrencyNode,
+                   n_passages: Optional[int] = None,
+                   delay: float = 0.5
+                   ) -> None:
+    """
+    Visualize the path found by the given algorithm in the given currency
+    graph.
+
+    ## Parameters
+        `G`: The currency graph to analyze.
+        `algorithm`: The algorithm to use to find the path.
+        `start_currency`: The currency node to start the cycle from.
+        `n_passages`: The maximum number of exchanges (passages) allowed.
+        `delay`: The delay between each step of the visualization.
+
+    ## Example
+    ```py
+    from src.currencygraph import CurrencyGraph, CurrencyNode, CurrencyEdge
+    nodes = [CurrencyNode('E'), CurrencyNode('D'),
+             CurrencyNode('L'), CurrencyNode('F')]
+    edges = [CurrencyEdge(nodes[0], nodes[0], 1.0),
+             CurrencyEdge(nodes[1], nodes[1], 1.0),
+             CurrencyEdge(nodes[2], nodes[2], 1.0),
+             CurrencyEdge(nodes[3], nodes[3], 1.0),
+             CurrencyEdge(nodes[0], nodes[1], 1.19),
+             CurrencyEdge(nodes[1], nodes[0], 0.84),
+             CurrencyEdge(nodes[0], nodes[2], 1.33),
+             CurrencyEdge(nodes[2], nodes[0], 0.75),
+             CurrencyEdge(nodes[0], nodes[3], 1.62),
+             CurrencyEdge(nodes[3], nodes[0], 0.62),
+             CurrencyEdge(nodes[1], nodes[2], 1.12),
+             CurrencyEdge(nodes[2], nodes[1], 0.89),
+             CurrencyEdge(nodes[1], nodes[3], 1.37),
+             CurrencyEdge(nodes[3], nodes[1], 0.73),
+             CurrencyEdge(nodes[2], nodes[3], 1.22),
+             CurrencyEdge(nodes[3], nodes[2], 0.82)]
+    G = CurrencyGraph(nodes, edges)
+    visualize_path(G, simplified_dijkstra, nodes[0], 3)
+    ```
+    """
+
+    G_nx = nx.DiGraph()
+    for node in G.nodes:
+        G_nx.add_node(node.name)
+    for edge in G.edges:
+        G_nx.add_edge(edge.source.name, edge.target.name, weight=edge.weight)
+
+    for node in G_nx.nodes:
+        G_nx.nodes[node]['color'] = 'gray'
+        G_nx.nodes[node]['visit_count'] = 0
+    for edge in G_nx.edges:
+        G_nx[edge[0]][edge[1]]['color'] = 'gray'
+        G_nx[edge[0]][edge[1]]['visit_count'] = 0
+
+    visit_colors = ['red', 'blue', 'green', 'purple', 'orange', 'cyan',
+                    'magenta', 'yellow', 'pink']
+
+    def update_display():
+        pos = {
+            G.nodes[0].name: (0, 0),
+            G.nodes[1].name: (1, 0),
+            G.nodes[2].name: (1, 1),
+            G.nodes[3].name: (0, 1),
+        }
+        node_colors = [G_nx.nodes[node].get('color', 'gray')
+                       for node in G_nx.nodes]
+        edge_colors = [G_nx[u][v].get('color', 'gray')
+                       for u, v in G_nx.edges]
+
+        plt.clf()
+        nx.draw(G_nx, pos, with_labels=True, node_color=node_colors,
+                edge_color=edge_colors, node_size=3000, font_size=10,
+                font_weight='bold', connectionstyle="arc3,rad=0.2",
+                arrows=True)
+        edge_labels = {(edge.source.name, edge.target.name): f'{edge.weight}'
+                       for edge in G.edges}
+        nx.draw_networkx_edge_labels(G_nx, pos, edge_labels=edge_labels,
+                                     label_pos=0.3, font_color='black')
+        plt.title(f"Algorithm: {algorithm.__name__}")
+        plt.pause(0.01)
+
+    def node_callback(node: CurrencyNode) -> None:
+        G_nx.nodes[node.name]['visit_count'] += 1
+        visit_count = G_nx.nodes[node.name]['visit_count']
+        color_index = min(visit_count - 1, len(visit_colors) - 1)
+        G_nx.nodes[node.name]['color'] = visit_colors[color_index]
+        update_display()
+        time.sleep(delay)
+
+    def edge_callback(edge: CurrencyEdge) -> None:
+        G_nx[edge.source.name][edge.target.name]['visit_count'] += 1
+        visit_count = G_nx[edge.source.name][edge.target.name]['visit_count']
+        color_index = min(visit_count - 1, len(visit_colors) - 1)
+        G_nx[edge.source.name][edge.target.name]['color'] = (
+            visit_colors[color_index])
+        update_display()
+        time.sleep(delay)
+
+    if n_passages is not None:
+        path, profit = algorithm(G, start_currency, n_passages,
+                                 node_callback=node_callback,
+                                 edge_callback=edge_callback)
+    else:
+        path, profit = algorithm(G, start_currency,
+                                 node_callback=node_callback,
+                                 edge_callback=edge_callback)
+
+    update_display()
+    plt.show(block=False)
+
+    print(f"Path found: {[node.name for node in path]}")
+    print(f"Associated rate: {profit}")
+
+
+if __name__ == "__main__":
+
+    nodes = [CurrencyNode('E'), CurrencyNode('D'),
+             CurrencyNode('L'), CurrencyNode('F')]
+    edges = [CurrencyEdge(nodes[0], nodes[0], 1.0),
+             CurrencyEdge(nodes[1], nodes[1], 1.0),
+             CurrencyEdge(nodes[2], nodes[2], 1.0),
+             CurrencyEdge(nodes[3], nodes[3], 1.0),
+             CurrencyEdge(nodes[0], nodes[1], 1.19),
+             CurrencyEdge(nodes[1], nodes[0], 0.84),
+             CurrencyEdge(nodes[0], nodes[2], 1.33),
+             CurrencyEdge(nodes[2], nodes[0], 0.75),
+             CurrencyEdge(nodes[0], nodes[3], 1.62),
+             CurrencyEdge(nodes[3], nodes[0], 0.62),
+             CurrencyEdge(nodes[1], nodes[2], 1.12),
+             CurrencyEdge(nodes[2], nodes[1], 0.89),
+             CurrencyEdge(nodes[1], nodes[3], 1.37),
+             CurrencyEdge(nodes[3], nodes[1], 0.73),
+             CurrencyEdge(nodes[2], nodes[3], 1.22),
+             CurrencyEdge(nodes[3], nodes[2], 0.82)]
+
+    G = CurrencyGraph(nodes, edges)
+
+    # visualize_path(G, simplified_dijkstra, nodes[0], 3)
+    visualize_path(G, brute_force, nodes[0])
