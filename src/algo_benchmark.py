@@ -116,11 +116,11 @@ class AlgoBenchmark:
                               else num_nodes - 1)
 
                 for algo in algorithms:
-                    visited_nodes = set()
+                    visited_nodes = []
                     traversed_edges = 0
 
                     def node_callback(node):
-                        visited_nodes.add(node)
+                        visited_nodes.append(node)
 
                     def edge_callback(edge):
                         nonlocal traversed_edges
