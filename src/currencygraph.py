@@ -412,6 +412,36 @@ class CurrencyGraph:
         else:
             raise ValueError(f"Node {node} not found in the graph.")
 
+    def to_networkx(self) -> nx.DiGraph:
+        """
+        Convertit le CurrencyGraph en un graphe NetworkX orienté.
+
+        ## Returns
+            Un objet NetworkX DiGraph représentant le CurrencyGraph.
+
+        ## Example
+        ```py
+        from currencygraph import CurrencyNode, CurrencyEdge, CurrencyGraph
+
+        nodes = [CurrencyNode('USD'), CurrencyNode('EUR')]
+        edges = [CurrencyEdge(CurrencyNode('USD'), CurrencyNode('EUR'), 0.8)]
+        graph = CurrencyGraph(nodes, edges)
+        G_nx = graph.to_networkx()
+        ```
+        """
+
+        G_nx = nx.DiGraph()
+
+        for node in self._nodes:
+            G_nx.add_node(node.name)
+
+        for edge in self._edges:
+            G_nx.add_edge(edge.source.name,
+                          edge.target.name,
+                          weight=edge.weight)
+
+        return G_nx
+
     @property
     def nodes(self) -> List[CurrencyNode]:
         """
