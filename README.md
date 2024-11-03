@@ -1,7 +1,7 @@
 # Profitable Path Detection in Currency Graph
 
 ## Project Description
-This project is designed to evaluate the performance of different algorithms for detecting profitable paths in currency graphs.By modeling a currency exchange graph, the project aims to identify arbitrage opportunities by maximizing profits through cycles in the graph.
+This project is designed to evaluate the performance of different algorithms for detecting profitable paths in currency graphs. By modeling a currency exchange graph, the project aims to identify arbitrage opportunities by maximizing profits through cycles in the graph.
 
 ## Project Structure
 - `src/optimal_paths.py`: the module containing each algorithm
