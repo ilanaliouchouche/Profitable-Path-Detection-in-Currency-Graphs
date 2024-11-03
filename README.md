@@ -4,9 +4,10 @@
 This project is designed to evaluate the performance of different algorithms for detecting profitable paths in currency graphs.By modeling a currency exchange graph, the project aims to identify arbitrage opportunities by maximizing profits through cycles in the graph.
 
 ## Project Structure
-- `src/optimal_paths`: contains the modules for each algorithm. Each executable module can be run to test its respective algorithm.
-- `app/bench_app/dashboard.py`: launches a dashboard to view the metrics of each algorithm's performance.
-- `tests/`: includes unit tests for verifying the functionality of each module.
+- `src/optimal_paths.py`: the module containing each algorithm
+- `src/algo_benchmark.py`: the code of the benchmark, executable with a `csv` as output (located in `app/bench_app`)
+- `app/bench_app/dashboard.py`: launches a dashboard to view the metrics of each algorithm's performance (with the output `csv` of `algo_benchmark.py`)
+- `tests/`: includes unit tests for verifying the functionality of each module
 
 ## Usage Guide
 
