@@ -28,7 +28,7 @@ python app/bench_app/dashboard.py
 ```
 
 ### Testing and Visualizing an algorithm
-To see a path research execution example with an interactive, you can modify the main function in `src/optimal_paths.py` to specify the desired algorithm and run (you can run it directly):
+To see a path research execution example with an interactive view, you can modify the main function in `src/optimal_paths.py` to specify the desired algorithm and run (you can run it directly):
 ```bash
 python src/optimal_paths.py
 ```
